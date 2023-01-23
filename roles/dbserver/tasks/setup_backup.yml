@@ -1,0 +1,24 @@
+---
+- name: Create backup dir
+  ansible.builtin.file:
+    path: /var/backup
+    state: directory
+  when:
+    replication_role == "slave"
+- name: Copy backup script
+  ansible.builtin.copy:
+    src: backup.sh
+    dest: /opt/backup_db_each_table.sh
+    mode: '0700'
+    owner: 'root'
+    group: 'root'
+- name: Setup cron job for backup
+  ansible.builtin.cron:
+    name: Mysql autobackup on per-table basis
+    weekday: "*"
+    hour: "12"
+    user: root
+    cron_file: mysql-per-table-backup
+    job: "/opt/backup_db_each_table.sh"
+- name: Execute backup once
+  ansible.builtin.command: "/opt/backup_db_each_table.sh"
