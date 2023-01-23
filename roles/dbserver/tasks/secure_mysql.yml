@@ -1,0 +1,66 @@
+---
+- name: Secure mysql - get temp password
+  shell: >-
+    grep 'temporary password' /var/log/mysqld.log |
+    awk '{print $NF}' | tail -n 1
+  args:
+    creates: /root/.my.cnf
+  register: temp_root_password
+  no_log: true
+- debug:
+    msg: "PWD: {{ temp_root_password }}"
+- name: Secure mysql - set password for root@localhost
+  shell: >
+    mysql -u root --password="{{ temp_root_password.stdout }}" --connect-expired-password -NBe
+    'ALTER USER "root"@"{{ item }}"
+    IDENTIFIED WITH mysql_native_password BY "{{ mysql_root_password }}";'
+  args:
+    creates: /root/.my.cnf
+  with_items:
+    - localhost
+  no_log: true
+  ignore_errors: true
+- name: Secure mysql - get all hosts for root except localhost
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    query: select host from mysql.user where user = 'root'
+  register: query_result_root_hosts
+- debug: var=query_result_root_hosts.query_result
+- set_fact:
+    query_root_hosts="{{ query_result_root_hosts.query_result|sum(start=[])|map(attribute='host') }}"
+- debug: var=query_root_hosts
+- name: Secure mysql - set password for root@other hosts
+  shell: >
+    mysql -u root --password="{{ mysql_root_password }}" --connect-expired-password -NBe
+    'ALTER USER "root"@"{{ item }}"
+    IDENTIFIED WITH mysql_native_password BY "{{ mysql_root_password }}";'
+  loop: "{{ query_root_hosts|default([]) }}"
+  args:
+    creates: /root/.my.cnf
+  when: item != "localhost"
+- name: Secure mysql - copy my.cnf with credentials
+  template:
+    src: "root-my.cnf.j2"
+    dest: "/root/.my.cnf"
+    owner: "root"
+    group: "root"
+    mode: 0600
+- name: Secure mysql - get hosts for anonymous logon
+  command: mysql -NBe "SELECT Host FROM mysql.user WHERE User = ''"
+  register: mysql_anonymous_hosts
+  changed_when: false
+  check_mode: false
+- name: Secure mysql - remove all hosts for anonymous logon
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    check_implicit_admin: yes
+    name: ""
+    host: "{{ item }}"
+    state: absent
+  with_items: "{{ mysql_anonymous_hosts.stdout_lines|default([]) }}"
+- name: Secure mysql - remove test database
+  mysql_db:
+    name: test
+    state: absent

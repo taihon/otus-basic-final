@@ -1,0 +1,56 @@
+---
+- name: Install java
+  ansible.builtin.yum:
+    name: java-1.8.0-openjdk.x86_64
+    state: present
+- name: Copy elastic repo
+  copy:
+    src: "elastic.repo"
+    dest: "/etc/yum.repos.d/elastic.repo"
+  when: not use_rpms
+- name: Copy elastic rpm
+  copy:
+    src: "{{ elasticsearch_rpm }}"
+    dest: "/tmp/elasticsearch.rpm"
+    force: false
+  when: use_rpms
+- name: Install elasticsearch
+  ansible.builtin.yum:
+    enablerepo: "elasticsearch"
+    name: elasticsearch
+    state: present
+  when: not use_rpms
+- name: Install elasticsearch from rpm
+  ansible.builtin.yum:
+    name: "/tmp/elasticsearch.rpm"
+    state: present
+- name: Create elasticsearch.service.d folder
+  ansible.builtin.file:
+    path: /etc/systemd/system/elasticsearch.service.d
+    state: directory
+    mode: 0755
+    recurse: yes
+- name: Tune jvm options
+  copy:
+    dest: "/etc/elasticsearch/jvm.options.d/jvm.options"
+    content: |
+      -Xms2g
+      -Xmx2g
+- name: Tune startup timeout for elasticsearch
+  copy:
+    src: "startup-timeout.conf"
+    dest: "/etc/systemd/system/elasticsearch.service.d/startup-timeout.conf"
+- name: Reload systemd and start elasticsearch
+  ansible.builtin.systemd:
+    name: elasticsearch
+    daemon-reload: true
+    enabled: true
+    state: started
+  register: es_restarted
+- name: Wait for elasticsearch to startup
+  wait_for: 
+    host: localhost
+    port: 9200
+    delay: 5
+    connect_timeout: 1
+  when: es_restarted is defined and es_restarted.changed

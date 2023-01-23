@@ -1,0 +1,30 @@
+- name: Enable Remi repo
+  ansible.builtin.yum:
+    name: https://rpms.remirepo.net/enterprise/remi-release-7.rpm
+    state: present
+- name: Install PHP
+  ansible.builtin.yum:
+    enablerepo: "remi-php80"
+    name: 
+    - php
+    - php-bcmath
+    - php-cli
+    - php-common
+    - php-curl
+    - php-devel
+    - php-dom
+    - php-exif
+    - php-fileinfo
+    - php-fpm
+    - php-gd
+    - php-imagick
+    - php-json
+    - php-mbstring
+    - php-mysqlnd
+    - php-mysqli
+    - php-openssl
+    - php-pcre
+    - php-pear
+    - php-xml
+    - php-zip
+    state: present

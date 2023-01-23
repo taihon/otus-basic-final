@@ -1,0 +1,6 @@
+---
+- name: restart_prometheus_server
+  service:
+    name: "prometheus"
+    state: restarted
+    enabled: true

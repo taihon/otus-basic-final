@@ -1,0 +1,6 @@
+- name: Install node_exporter for RHEL
+  import_tasks: redhat.yml
+  when: ansible_facts['os_family']|lower == 'redhat'
+- name: Install apache_exporter for RHEL
+  import_tasks: install-apache-exporter.yml
+  when: ansible_facts['os_family']|lower == 'redhat'

@@ -1,0 +1,18 @@
+---
+- name: Ensure wp database exists
+  community.mysql.mysql_db:
+    name: "{{ wpdb_dbname }}"
+    state: present
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+  when: replication_role == "master"
+- name: Ensure wpdb_user exists
+  community.mysql.mysql_user:
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ wpdb_user }}"
+    host: '%'
+    password: "{{ wpdb_password }}"
+    priv: "{{ wpdb_dbname }}.*:ALL"
+    state: present
+  when: replication_role == "master"

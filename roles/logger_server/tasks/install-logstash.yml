@@ -1,0 +1,60 @@
+---
+- name: Install java
+  ansible.builtin.yum:
+    name: java-1.8.0-openjdk.x86_64
+    state: present
+- name: Copy elastic repo
+  copy:
+    src: "elastic.repo"
+    dest: "/etc/yum.repos.d/elastic.repo"
+  when: not use_rpms
+- name: Copy logstash rpm
+  copy:
+    src: "{{ logstash_rpm }}"
+    dest: "/tmp/logstash.rpm"
+    force: false
+  when: use_rpms
+- name: Install logstash
+  ansible.builtin.yum:
+    enablerepo: "elasticsearch"
+    name: logstash
+    state: present
+  when: not use_rpms
+- name: Install logstash from rpm
+  ansible.builtin.yum:
+    name: "/tmp/logstash.rpm"
+    state: present
+- name: Create logstash.service.d folder
+  ansible.builtin.file:
+    path: /etc/systemd/system/logstash.service.d
+    state: directory
+    mode: 0755
+    recurse: yes
+- name: Tune startup timeout for logstash
+  copy:
+    src: "startup-timeout.conf"
+    dest: "/etc/systemd/system/logstash.service.d/startup-timeout.conf"
+- name: Copy logstash-nginx-es config
+  copy:
+    src: "logstash-nginx-es.conf"
+    dest: "/etc/logstash/conf.d/logstash-nginx-es.conf"
+  register: logstash_conf_copy
+- name: Edit logstash.yml enabling conf.d collection
+  ansible.builtin.lineinfile:
+    path: /etc/logstash/logstash.yml
+    regexp: '^# path.config:'
+    line: "path.config: /etc/logstash/conf.d"
+- name: Reload systemd and start logstash
+  ansible.builtin.systemd:
+    name: logstash
+    daemon-reload: true
+    enabled: true
+    state: restarted
+  register: logstash_restarted
+  when: logstash_conf_copy is defined and logstash_conf_copy.changed
+- name: Open port 5400 on firewall
+  ansible.posix.firewalld:
+    port: 5400/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled

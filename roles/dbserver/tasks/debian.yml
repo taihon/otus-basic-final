@@ -1,0 +1,4 @@
+- name: Install mysql
+  ansible.builtin.apt:
+    name: mysql-community-server
+    state: present

@@ -1,0 +1,21 @@
+upstream backend {
+  {% for node in groups.backends %}
+  server {{ hostvars[node]['ansible_host'] }}:81;
+  {% endfor %}
+}
+
+server {
+  listen 80; #listen on port 80
+  server_name web.app;
+  location / {
+    proxy_read_timeout 300s;
+    proxy_pass http://backend; #pass all requests processed to the backend upstream servers
+  }
+}
+server {
+  listen 8080;
+  server_name stub;
+  location /stub_status {
+    stub_status;
+  }
+}

@@ -1,0 +1,76 @@
+---
+- name: Ensure replica user exists on master
+  mysql_user:
+    name: "{{ mysql_replica_username }}"
+    password: "{{ mysql_replica_password }}"
+    host: '%'
+    priv: '*.*:REPLICATION SLAVE,REPLICATION CLIENT'
+    state: present
+  when:
+    - replication_role == "master"
+    - mysql_replica_username is defined
+- set_fact:
+    master_ip: "{{ hostvars[item]['ansible_host'] }}"
+    master_server: "{{ item }}"
+  with_items: "{{ groups.dbservers }}"
+  when:
+    - hostvars[item].replication_role == 'master'
+    - replication_role == "slave"
+
+- debug: 
+    msg:
+      - "master_server: {{ master_server }}"
+      - "master_ip: {{ master_ip }}"
+  when:
+    - replication_role == "slave"
+- name: Check replica status on slave
+  mysql_replication:
+    mode: getreplica
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+  ignore_errors: true
+  register: slave
+  when:
+    - replication_role == "slave"
+    - (master_server | length) > 0
+    
+- name: Check replica status on master
+  mysql_replication: mode=getprimary
+  delegate_to: "{{ master_server }}"
+  register: master
+  when:
+    - (slave.Is_Slave is defined and not slave.Is_Slave) or (slave.Is_Replica is defined and not slave.Is_Replica) or (slave.Is_Slave is not defined and slave.Is_Replica is not defined and slave is failed)
+    - replication_role == 'slave'
+    - (master_server | length) > 0
+    
+- name: dump vars
+  vars:
+    msg: |
+      master node: {{ master_server }}
+      master binlog filename: {{ master.File }}
+      master binlog position: {{ master.Position }}
+  debug: 
+    msg: "{{ msg.split('\n') }}"
+  when: replication_role == "slave"
+    
+- name: Setup replication on slave
+  mysql_replication:
+    mode: changeprimary
+    master_host: "{{ master_ip }}"
+    master_user: "{{ mysql_replica_username }}"
+    master_password: "{{ mysql_replica_password }}"
+    master_log_file: "{{ master.File }}"
+    master_log_pos: "{{ master.Position }}"
+  ignore_errors: true
+  when:
+    - (slave.Is_Slave is defined and not slave.Is_Slave) or (slave.Is_Replica is defined and not slave.Is_Replica) or (slave.Is_Slave is not defined and slave.Is_Replica is not defined and slave is failed)
+    - replication_role == 'slave'
+    - (master_server | length) > 0
+    
+- name: Start replication
+  mysql_replication:
+    mode: startreplica
+  when:
+    - (slave.Is_Slave is defined and not slave.Is_Slave) or (slave.Is_Replica is defined and not slave.Is_Replica) or (slave.Is_Slave is not defined and slave.Is_Replica is not defined and slave is failed)
+    - replication_role == 'slave'
+    - (master_server | length) > 0

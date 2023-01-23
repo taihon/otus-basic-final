@@ -1,0 +1,6 @@
+ansible.cfg
+files/*.rpm
+files/prometheus
+files/node_exporter
+files/apache_exporter
+files/nginx_prometheus_exporter

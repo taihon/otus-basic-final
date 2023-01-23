@@ -1,0 +1,10 @@
+[Unit]
+Description=ApachePrometheusExporter
+
+[Service]
+TimeoutStartSec=0
+User=apache_exporter
+ExecStart=/usr/bin/apache_exporter --scrape_uri=http://localhost:81/server-status?auto
+
+[Install]
+WantedBy=multi-user.target

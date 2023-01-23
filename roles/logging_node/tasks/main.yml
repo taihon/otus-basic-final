@@ -1,0 +1,3 @@
+- name: Install filebeat for RHEL
+  import_tasks: redhat.yml
+  when: ansible_facts['os_family']|lower == 'redhat'

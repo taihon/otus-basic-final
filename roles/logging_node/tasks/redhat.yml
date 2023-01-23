@@ -1,0 +1,29 @@
+---
+- name: Ensure that the filebeat user exists
+  user:
+    name: "filebeat"
+    shell: /bin/false
+    state: present
+- name: Copy filebeat binary
+  copy:
+    src: "{{ filebeat_rpm }}"
+    dest: "/tmp/filebeat.rpm"
+  when: use_rpms
+- name: Install filebeat from rpm
+  ansible.builtin.yum:
+    name: "/tmp/filebeat.rpm"
+    state: present
+  when: use_rpms
+- set_fact:
+    logstash_server: "{{ hostvars[item]['ansible_host'] }}"
+  with_items: "{{ groups.logging }}"
+- name: Copy filebeat config from template
+  template:
+    src: "filebeat.yml.j2"
+    dest: "/etc/filebeat/filebeat.yml"
+- name: Ensure filebeat service is started
+  ansible.builtin.systemd:
+    name: filebeat
+    daemon-reload: true
+    enabled: true
+    state: restarted

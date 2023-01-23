@@ -1,0 +1,7 @@
+- name: Install elastic stack for RHEL
+  include_tasks: "{{ item }}"
+  loop:   
+    - install-elasticsearch.yml
+    - install-logstash.yml
+    - install-kibana.yml
+  when: ansible_facts['os_family']|lower == 'redhat'

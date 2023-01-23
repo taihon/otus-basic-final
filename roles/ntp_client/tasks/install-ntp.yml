@@ -1,0 +1,18 @@
+---
+- name: remove epel-release temporarily
+  ansible.builtin.yum:
+    name: epel-release
+    state: absent
+  when: update_time is defined and update_time
+- name: Install ntp
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - ntp
+    - ntpdate
+    - epel-release
+  when: update_time is defined and update_time
+- name: Update time from ntp
+  ansible.builtin.command: "ntpdate 1.ru.pool.ntp.org"
+  when: update_time is defined and update_time

@@ -1,0 +1,15 @@
+{
+  "mysql_root_password": "Str0nkP4sswr!d",
+  "mysql_replica_username": "repluser",
+  "mysql_replica_password": "r3p1P@sswr!d",
+  "use_rpms": true,
+  "update_time": true,
+  "kibana_rpm": "files/kibana_7.17.3_x86_64.rpm",
+  "elasticsearch_rpm": "files/elasticsearch_7.17.3_x86_64.rpm",
+  "logstash_rpm": "files/logstash_7.17.3_x86_64.rpm",
+  "filebeat_rpm": "files/filebeat_7.17.3_x86_64.rpm",
+  "grafana_rpm": "files/grafana-9.3.2-1.x86_64.rpm",
+  "wpdb_user": "wpdb_user",
+  "wpdb_password": "w0rdpr3ss_&!",
+  "wpdb_dbname": "wordpress"
+}

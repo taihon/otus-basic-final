@@ -1,0 +1,32 @@
+---
+- name: Ensure that the nginx_prometheus_exporter user exists
+  user:
+    name: "nginx_prometheus_exporter"
+    shell: /bin/false
+    state: present
+- name: Copy nginx_prometheus_exporter binary
+  copy:
+    src: "files/nginx-prometheus-exporter"
+    dest: "/usr/bin/nginx-prometheus-exporter"
+    mode: 0755
+- name: Copy systemd nginx_prometheus_exporter service file
+  template:
+    src: "nginx_prometheus_exporter.service.j2"
+    dest: "/etc/systemd/system/nginx_prometheus_exporter.service"
+  register: nginx_prometheus_exporter
+- name: Reload systemd if nginx_prometheus_exporter service file is changed
+  systemd:
+    daemon_reload: true
+  notify: nginx_prometheus_exporter
+  when: nginx_prometheus_exporter is changed
+- name: Ensure nginx_prometheus_exporter is started
+  ansible.builtin.systemd:
+    name: nginx_prometheus_exporter.service
+    enabled: yes
+    state: started
+- name: Open port 9113 in firewall
+  ansible.builtin.firewalld:
+    port: 9113/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled

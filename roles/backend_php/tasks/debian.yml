@@ -1,0 +1,4 @@
+- name: Install PHP
+  ansible.builtin.apt:
+    name: php>=7.4
+    state: present

@@ -1,0 +1,51 @@
+---
+- name: Provision variables
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+  
+  vars_prompt:
+    - name: mysql_root_password
+      prompt: "enter mysql_root_password"
+    - name: mysql_replica_username
+      prompt: "enter mysql_replica_username"
+    - name: mysql_replica_password
+      prompt: "enter mysql_replica_password"
+- hosts: all
+  roles:
+    - role: ntp_client
+      tags: ntp_client_tag
+
+- hosts: backends
+  roles:
+    - role: backend_httpd
+      tags: backend_httpd_tag
+    - role: backend_php
+    - role: backend_website
+      tags: backend_website_tag
+- hosts: frontends
+  roles:
+    - role: frontend_nginx
+      tags: frontend_tag
+- hosts: dbservers
+  roles: 
+    - role: dbserver
+      tags: dbserver_tag
+- hosts: monitoring
+  roles:
+    - role: monitoring_server
+      tags: monitoring_server_tag
+- hosts: monitored
+  roles:
+    - role: monitored_node
+      tags: monitored_node_tag
+    - role: logging_node
+      tags: logging_node_tag
+- hosts: logging
+  roles:
+    - role: logger_server
+      tags: logger_server_tag
+- hosts: dbservers
+  roles:
+    - role: restore_wpbackup
+      tags: restorewp_tag

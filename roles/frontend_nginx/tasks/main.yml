@@ -1,0 +1,9 @@
+- name: Install nginx for RHEL
+  import_tasks: redhat.yml
+  when: ansible_facts['os_family']|lower == 'redhat'
+- name: Install nginx for RHEL
+  import_tasks: debian.yml
+  when: ansible_facts['os_family']|lower == 'debian'
+- name: Install nginx_prometheus_exporter for RHEL
+  import_tasks: install-prometheus-exporter.yml
+  when: ansible_facts['os_family']|lower == 'redhat'

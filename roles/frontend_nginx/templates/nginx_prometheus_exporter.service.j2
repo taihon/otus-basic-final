@@ -1,0 +1,10 @@
+[Unit]
+Description=NginxPrometheusExporter
+
+[Service]
+TimeoutStartSec=0
+User=nginx_prometheus_exporter
+ExecStart=/usr/bin/nginx-prometheus-exporter
+
+[Install]
+WantedBy=multi-user.target

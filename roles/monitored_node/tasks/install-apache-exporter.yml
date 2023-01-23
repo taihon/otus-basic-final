@@ -1,0 +1,32 @@
+---
+- name: Ensure that the apache_exporter user exists
+  user:
+    name: "apache_exporter"
+    shell: /bin/false
+    state: present
+- name: Copy apache_exporter binary
+  copy:
+    src: "files/apache_exporter"
+    dest: "/usr/bin/apache_exporter"
+    mode: 0755
+- name: Copy systemd apache_exporter service file
+  template:
+    src: "apache_exporter.service.j2"
+    dest: "/etc/systemd/system/apache_exporter.service"
+  register: apache_exporter
+- name: Reload systemd if apache_exporter service file is changed
+  systemd:
+    daemon_reload: true
+  notify: apache_exporter
+  when: apache_exporter is changed
+- name: Ensure apache_exporter is started
+  ansible.builtin.systemd:
+    name: apache_exporter.service
+    enabled: yes
+    state: started
+- name: Open port 9117 in firewall
+  ansible.builtin.firewalld:
+    port: 9117/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled

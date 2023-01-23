@@ -1,0 +1,54 @@
+---
+- name: Install java
+  ansible.builtin.yum:
+    name: java-1.8.0-openjdk.x86_64
+    state: present
+- name: Copy elastic repo
+  copy:
+    src: "elastic.repo"
+    dest: "/etc/yum.repos.d/elastic.repo"
+  when: not use_rpms
+- name: Copy kibana rpm
+  copy:
+    src: "{{ kibana_rpm }}"
+    dest: "/tmp/kibana.rpm"
+    force: false
+  when: use_rpms
+- name: Install kibana
+  ansible.builtin.yum:
+    enablerepo: "elasticsearch"
+    name: elasticsearch
+    state: present
+  when: not use_rpms
+- name: Install kibana from rpm
+  ansible.builtin.yum:
+    name: "/tmp/kibana.rpm"
+    state: present
+- name: Create kibana.service.d folder
+  ansible.builtin.file:
+    path: /etc/systemd/system/kibana.service.d
+    state: directory
+    mode: 0755
+    recurse: yes
+- name: Tune startup timeout for kibana
+  copy:
+    src: "startup-timeout.conf"
+    dest: "/etc/systemd/system/kibana.service.d/startup-timeout.conf"
+- name: Open port 5601 on firewall
+  ansible.posix.firewalld:
+    port: 5601/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled
+- name: Edit kibana listen url
+  ansible.builtin.lineinfile:
+    path: "/etc/kibana/kibana.yml"
+    regexp: '^#server\.host:\s"localhost"'
+    line: "server.host: \"{{ ansible_host }}\""
+- name: Reload systemd and start kibana
+  ansible.builtin.systemd:
+    name: kibana
+    daemon-reload: true
+    enabled: true
+    state: restarted
+  register: kibana_restarted

@@ -1,0 +1,45 @@
+---
+# if only grafana repo (https://rpm.grafana.com) worked from Russia
+- name: Copy grafana yum repo file
+  copy:
+    src: "grafana.repo"
+    dest: "/etc/yum.repos.d/grafana.repo"
+    mode: 0755
+  when: not use_rpms
+- name: Install grafana from repo
+  ansible.builtin.yum:
+    name: graphana
+    state: present
+  when: not use_rpms
+- name: Copy grafana.rpm file
+  copy:
+    src: "{{ grafana_rpm }}"
+    dest: "/tmp/grafana.rpm"
+  when: use_rpms
+- name: Install grafana from rpm
+  ansible.builtin.yum:
+    name: "/tmp/grafana.rpm"
+    state: present
+  when: use_rpms
+- name: Override grafana-server systemd service definition
+  copy:
+    src: "grafana-server.service"
+    dest: "/usr/lib/systemd/system/grafana-server.service"
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+- name: Copy pre-configured grafana.db
+  ansible.builtin.copy:
+    src: "files/backup/grafana/grafana.db"
+    dest: "/var/lib/grafana/grafana.db"
+- name: Ensure grafana enabled and started
+  ansible.builtin.systemd:
+    name: grafana-server.service
+    enabled: true
+    state: started
+- name: Open port 3000 in firewalld
+  ansible.posix.firewalld:
+    port: 3000/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled

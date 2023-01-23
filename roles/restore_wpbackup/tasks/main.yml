@@ -1,0 +1,44 @@
+---
+- name: Copy backup to master db server
+  ansible.builtin.copy:
+    src: "files/backup/wordpress"
+    dest: "/tmp/wpbackup"
+  when:
+    - replication_role == "master"
+- name: List filename of per-table backup
+  ansible.builtin.find:
+    paths: "/tmp/wpbackup/wordpress"
+    patterns: "wp*.gz"
+  when:
+    - replication_role == "master"
+  register: find_wp_backup_files
+- set_fact:
+    wp_backup_files="{{ find_wp_backup_files.files|map(attribute='path')|list }}"
+  when:
+    - replication_role == "master"
+
+- name: Dump variable
+  ansible.builtin.debug:
+    var: wp_backup_files
+  when:
+    - replication_role == "master"
+- name: Drop wp database
+  community.mysql.mysql_db:
+    name: "{{ wpdb_dbname }}"
+    state: absent
+  when:
+    - replication_role == "master"
+- name: Recreate wp database
+  community.mysql.mysql_db:
+    name: "{{ wpdb_dbname }}"
+    state: present
+  when:
+    - replication_role == "master"
+- name: zcat backup gz files into '{{ wpdb_dbname }}'
+  ansible.builtin.shell: zcat {{ item }} | mysql --skip-column-names {{ wpdb_dbname }}
+  with_items: "{{ wp_backup_files }}"
+  when:
+    - replication_role == "master"
+  async: 60
+  poll: 0
+#leaves some garbage behind

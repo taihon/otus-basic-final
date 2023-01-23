@@ -1,0 +1,31 @@
+- name: Install web server
+  ansible.builtin.yum:
+    name: httpd
+    state: present
+- name: Apply httpd.conf
+  template:
+    src: "httpd.conf.j2"
+    dest: "/etc/httpd/conf/httpd.conf"
+  notify: Reload httpd
+- name: Ensure web server is enabled and launched
+  ansible.builtin.systemd:
+    name: httpd.service
+    enabled: yes
+- name: Open firewall ports
+  ansible.posix.firewalld:
+    port: 81/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled
+- name: Install libsemanage-python
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - libselinux-python
+    - libsemanage-python
+- name: Allow httpd to connect to network databases
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect_db
+    state: yes
+    persistent: yes

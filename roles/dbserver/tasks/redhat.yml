@@ -1,0 +1,43 @@
+- name: Disable default repo
+  ansible.builtin.yum_repository:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+      - "mysql-connectors-community/x86_64"
+      - "mysql-tools-community/x86_64"
+      - "mysql56-community/x86_64"
+      - "mysql-community"
+- name: Install and enable repo
+  ansible.builtin.yum:
+    name: "https://repo.mysql.com/mysql80-community-release-el7-3.noarch.rpm"
+    state: present
+- name: Install GPG key for RPM
+  ansible.builtin.rpm_key:
+    state: present
+    key: https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+- name: Install mysql
+  ansible.builtin.yum:
+    enablerepo: "mysql80-community"
+    name: 
+    - mysql-community-server
+    - mysql-community-client
+    - MySQL-python
+    state: present
+- name: Copy my.cnf from template
+  template:
+    src: "my.cnf.j2"
+    dest: "/etc/my.cnf"
+  notify: Reload mysqld
+  when:
+    - replication_role == 'slave'
+- name: Ensure mysql is started
+  ansible.builtin.systemd:
+    name: mysqld.service
+    enabled: yes
+    state: started
+- name: Open firewall ports
+  ansible.posix.firewalld:
+    port: 3306/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled

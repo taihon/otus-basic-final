@@ -1,0 +1,6 @@
+---
+- name: Reload mysqld
+  systemd:
+    name: mysqld.service
+    enabled: yes
+    state: restarted
