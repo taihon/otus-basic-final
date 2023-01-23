@@ -2,7 +2,7 @@
 
 MYSQL="mysql --skip-column-names ";
 MYSQLDMP="/usr/bin/mysqldump"
-for db in `$MYSQL -e "show databases like 'wordpress%'"`;
+for db in `$MYSQL -e "show databases like '{{ wpdb_dbname }}%'"`;
 	do
 		mkdir $db;
 		for table in `$MYSQL -e "use $db;show tables;"`

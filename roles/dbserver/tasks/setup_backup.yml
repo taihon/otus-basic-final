@@ -6,8 +6,8 @@
   when:
     replication_role == "slave"
 - name: Copy backup script
-  ansible.builtin.copy:
-    src: backup.sh
+  ansible.builtin.template:
+    src: backup.sh.j2
     dest: /opt/backup_db_each_table.sh
     mode: '0700'
     owner: 'root'
