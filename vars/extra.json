@@ -3,7 +3,7 @@
   "mysql_replica_username": "repluser",
   "mysql_replica_password": "r3p1P@sswr!d",
   "use_rpms": true,
-  "update_time": true,
+  "update_time": false,
   "kibana_rpm": "files/kibana_7.17.3_x86_64.rpm",
   "elasticsearch_rpm": "files/elasticsearch_7.17.3_x86_64.rpm",
   "logstash_rpm": "files/logstash_7.17.3_x86_64.rpm",

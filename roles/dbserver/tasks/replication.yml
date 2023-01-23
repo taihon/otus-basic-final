@@ -42,17 +42,6 @@
     - (slave.Is_Slave is defined and not slave.Is_Slave) or (slave.Is_Replica is defined and not slave.Is_Replica) or (slave.Is_Slave is not defined and slave.Is_Replica is not defined and slave is failed)
     - replication_role == 'slave'
     - (master_server | length) > 0
-    
-- name: dump vars
-  vars:
-    msg: |
-      master node: {{ master_server }}
-      master binlog filename: {{ master.File }}
-      master binlog position: {{ master.Position }}
-  debug: 
-    msg: "{{ msg.split('\n') }}"
-  when: replication_role == "slave"
-    
 - name: Setup replication on slave
   mysql_replication:
     mode: changeprimary
