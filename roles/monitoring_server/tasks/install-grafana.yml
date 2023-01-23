@@ -32,6 +32,12 @@
   ansible.builtin.copy:
     src: "files/backup/grafana/grafana.db"
     dest: "/var/lib/grafana/grafana.db"
+- name: Set permissions:
+  ansible.builtin.file:
+    path: "/var/lib/grafana/grafana.db"
+    owner: grafana
+    group: grafana
+    mode: '0600'
 - name: Ensure grafana enabled and started
   ansible.builtin.systemd:
     name: grafana-server.service
