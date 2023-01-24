@@ -32,7 +32,7 @@
   ansible.builtin.copy:
     src: "files/backup/grafana/grafana.db"
     dest: "/var/lib/grafana/grafana.db"
-- name: Set permissions:
+- name: Set permissions on grafana.db
   ansible.builtin.file:
     path: "/var/lib/grafana/grafana.db"
     owner: grafana
