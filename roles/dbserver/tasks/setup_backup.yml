@@ -1,7 +1,7 @@
 ---
 - name: Create backup dir
   ansible.builtin.file:
-    path: /var/backup
+    path: "/var/backup/{{ wpdb_dbname }}/"
     state: directory
   when:
     replication_role == "slave"
